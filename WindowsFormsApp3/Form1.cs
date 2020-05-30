@@ -2,48 +2,25 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using System.Windows.Forms;
 
 namespace WindowsFormsApp3
 {
-    public class AutoClosingMessageBox
-    {
-        System.Threading.Timer _timeoutTimer;
-        string _caption;
-        AutoClosingMessageBox(string text, string caption, int timeout)
-        {
-            _caption = caption;
-            _timeoutTimer = new System.Threading.Timer(OnTimerElapsed,
-                null, timeout, System.Threading.Timeout.Infinite);
-            using (_timeoutTimer)
-                MessageBox.Show(text, caption);
-        }
-        public static void Show(string text, string caption, int timeout)
-        {
-            new AutoClosingMessageBox(text, caption, timeout);
-        }
-        void OnTimerElapsed(object state)
-        {
-            IntPtr mbWnd = FindWindow("#32770", _caption); // lpClassName is #32770 for MessageBox
-            if (mbWnd != IntPtr.Zero)
-                SendMessage(mbWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-            _timeoutTimer.Dispose();
-        }
-        const int WM_CLOSE = 0x0010;
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
-        static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
-        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
-        static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
-    }
+
     public partial class Form1 : Form
     {
         private Size defaultTbSize = new Size(208, 20);
         private Point defaultlocationTb = new Point { X = 130, Y = 51 };
+
+        public string pattern { get; private set; }
+
         public Form1()
         {
             InitializeComponent();
@@ -55,7 +32,9 @@ namespace WindowsFormsApp3
             //    Multiform test = new Multiform();
             //    test.Show();
             //}
-            AutoClosingMessageBox.Show("Text", "Caption", 1000);
+            //AutoClosingMessageBox.Show("Text", "Caption", 1000);+
+            tbBorderBottomLeft.Text += Environment.UserDomainName + "/" + Environment.UserName;
+            timer1.Start();
         }
 
         private void LoadTreeView()
@@ -69,23 +48,7 @@ namespace WindowsFormsApp3
 
         private void textBox1_MouseEnter(object sender, EventArgs e)
         {
-            TextBox tb = (TextBox)sender;
-            tb.AutoSize = false;
-            tb.BorderStyle = BorderStyle.Fixed3D;
-            tb.Font = new Font("Arial", 10);
 
-            Point locationTb = tb.Location;
-            int width = tb.Width + 5;
-            var heigh = tb.Height + 5;
-            int difWidth = tb.Width - width;
-            int difheigh = tb.Height - heigh;
-
-            tb.Size = new System.Drawing.Size(width, heigh);
-            locationTb.X = locationTb.X + difWidth / 2;
-            locationTb.Y = locationTb.Y + difheigh / 2;
-
-            //defaultlocationTb = locationTb;
-            tb.Location = locationTb;
         }
 
         private void textBox1_Leave(object sender, EventArgs e)
@@ -114,7 +77,9 @@ namespace WindowsFormsApp3
         private void button1_Click(object sender, EventArgs e)
         {
             //checkedListBox2.Items.Add(comboBox1.SelectedItem);
-            checkedListBox2.Items.Insert(0, comboBox1.SelectedItem);
+            Popup popup = new Popup();
+            popup.ShowDialog();
+
         }
         private void checkedListBox1_MouseHover(object sender, EventArgs e)
         {
@@ -140,6 +105,100 @@ namespace WindowsFormsApp3
 
         }
 
+        private void panel1_Paint(object sender, PaintEventArgs e)
+        {
 
+        }
+
+        private void buttonModified1_Click(object sender, EventArgs e)
+        {
+            panel1.Visible = true;
+            panel2.Visible = false;
+
+            panel3.Visible = false;
+
+            panel1.Visible = false;
+
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            tbBorderBottomRight.Text = " " + DateTime.Now.ToString("HH:mm:ss"); ;
+
+        }
+
+        private void cbExt1_Enter(object sender, EventArgs e)
+        {
+
+        }
+
+        private void tbExtRegex_TextChanged(object sender, EventArgs e)
+        {
+            pattern = string.Empty;
+            String input = tbExtRegex.Text;
+
+            char[] sepearator = new char[] { '.', ',' };
+            char[] sepearatorExponent = new char[] { 'e', 'E' };
+
+            var IsExponent = input.IndexOfAny(sepearatorExponent) != -1;
+            var IsFloat = input.IndexOfAny(sepearator) != -1;
+            String[] inputAr = input.Split(sepearator);
+
+            if (IsFloat && inputAr[inputAr.Length - 1] != "") // FLOAT
+            {
+                int nbrLeftComma = inputAr[0].Length;
+                int nbrRightComma = inputAr[1].Length;
+                pattern = @"[1-9]{" + nbrLeftComma + @"}[\.\,]?[0-9]{" + nbrRightComma + @"}";
+
+                Match match = Regex.Match(input, pattern);
+                if (match.Success)
+                {
+                    decimal value;
+                    match = Regex.Match(input, pattern);
+                    if (match.Success)
+                    {
+                        if (Decimal.TryParse(input, out value))
+                        {
+
+                        }
+                    }
+                }
+            }
+            else if (IsExponent) // Exponent
+            {
+                pattern = @"[-+]?[0-9]*\.?[0-9]{2}([eE][-+][0]{6}?[1-9]{6,8})"; //+12e+00000098999999
+            }
+            else {  // INTEGER
+
+                int nbrLeftComma = inputAr[0].Length;
+                pattern = @"\-?\d{" + nbrLeftComma + "}";
+
+            }
+        }
+
+        private void tbValueRegex_TextChanged(object sender, EventArgs e)
+        {
+            string input = tbValueRegex.Text;
+            Match match = Regex.Match(input, pattern);
+            if (match.Success)
+            {
+                errorProvider1.SetError(tbValueRegex, "");
+
+                decimal value;
+                match = Regex.Match(input, pattern);
+                if (match.Success)
+                {
+                    if (Decimal.TryParse(input, out value))
+                    {
+
+                    }
+                }
+            }
+            else
+            {
+                errorProvider1.SetError(tbValueRegex, "Erreur regex");
+
+            }
+        }
     }
 }
