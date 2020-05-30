@@ -151,7 +151,7 @@ namespace WindowsFormsApp3
                 pattern = @"[1-9]{" + nbrLeftComma + @"}[\.\,]?[0-9]{" + nbrRightComma + @"}";
 
                 Match match = Regex.Match(input, pattern);
-                if (match.Success)
+                if (match.Success) 
                 {
                     decimal value;
                     match = Regex.Match(input, pattern);
