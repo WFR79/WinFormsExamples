@@ -134,44 +134,60 @@ namespace WindowsFormsApp3
 
         private void tbExtRegex_TextChanged(object sender, EventArgs e)
         {
+            errorProvider1.SetError(tbExtRegex, "");
+
             pattern = string.Empty;
             String input = tbExtRegex.Text;
 
             char[] sepearator = new char[] { '.', ',' };
             char[] sepearatorExponent = new char[] { 'e', 'E' };
+            char[] sepearatorSymbol= new char[] { '+', '-' };
 
             var IsExponent = input.IndexOfAny(sepearatorExponent) != -1;
             var IsFloat = input.IndexOfAny(sepearator) != -1;
+
             String[] inputAr = input.Split(sepearator);
 
             if (IsFloat && inputAr[inputAr.Length - 1] != "") // FLOAT
             {
                 int nbrLeftComma = inputAr[0].Length;
                 int nbrRightComma = inputAr[1].Length;
-                pattern = @"[1-9]{" + nbrLeftComma + @"}[\.\,]?[0-9]{" + nbrRightComma + @"}";
+                int MinLimitUnity = Convert.ToInt32(inputAr[0]);
 
-                Match match = Regex.Match(input, pattern);
-                if (match.Success) 
-                {
-                    decimal value;
-                    match = Regex.Match(input, pattern);
-                    if (match.Success)
-                    {
-                        if (Decimal.TryParse(input, out value))
-                        {
-
-                        }
-                    }
-                }
+                pattern = @"[-+]?["+ MinLimitUnity + @"-9]{" + nbrLeftComma + @"}[\.\,]?[0-9]{" + nbrRightComma + @"}";
             }
             else if (IsExponent) // Exponent
             {
-                pattern = @"[-+]?[0-9]*\.?[0-9]{2}([eE][-+][0]{6}?[1-9]{6,8})"; //+12e+00000098999999
+                if (input.Length > 2)
+                {
+                    inputAr = input.Split(sepearatorExponent);
+                    int nbrLeftComma = inputAr[0].Length;
+                    int nbrRightComma = inputAr[1].Length;
+                    pattern = @"[-+]?[0-9]*\.?[0-9]{" + nbrRightComma + @"}([eE]?[0-9]{" + nbrRightComma + @"})"; 
+                }
             }
-            else {  // INTEGER
+            else // INTEGER
+            {  
+                int value;
+                if (int.TryParse(input, out value))
+                {
+                    int indexAddSymbol = input.IndexOf("+");
+                    int indexMinusSymbol = input.IndexOf("-");
 
-                int nbrLeftComma = inputAr[0].Length;
-                pattern = @"\-?\d{" + nbrLeftComma + "}";
+                    int nbrLeftComma = inputAr[0].Length;
+                    if (indexAddSymbol >= 0)
+                        pattern = @"[+]?[0-9]{" + (nbrLeftComma - 1) + "}";
+                    else if (indexMinusSymbol >= 0)
+                        pattern = @"[-]?[0-9]{" + (nbrLeftComma - 1) + "}";
+                    else
+                        pattern = @"[-+]?[0-9]{" + nbrLeftComma + "}";
+
+                }
+                else { // IS_STRING
+                    errorProvider1.SetError(tbExtRegex, "Doesn't contain numbers");
+
+                }
+
 
             }
         }
