@@ -141,7 +141,7 @@ namespace WindowsFormsApp3
 
             char[] sepearator = new char[] { '.', ',' };
             char[] sepearatorExponent = new char[] { 'e', 'E' };
-            char[] sepearatorSymbol= new char[] { '+', '-' };
+            char[] sepearatorSymbol = new char[] { '+', '-' };
 
             var IsExponent = input.IndexOfAny(sepearatorExponent) != -1;
             var IsFloat = input.IndexOfAny(sepearator) != -1;
@@ -150,24 +150,34 @@ namespace WindowsFormsApp3
 
             if (IsFloat && inputAr[inputAr.Length - 1] != "") // FLOAT
             {
+                char matchCharZero = '0';
+
                 int nbrLeftComma = inputAr[0].Length;
                 int nbrRightComma = inputAr[1].Length;
                 int MinLimitUnity = Convert.ToInt32(inputAr[0]);
 
-                pattern = @"[-+]?["+ MinLimitUnity + @"-9]{" + nbrLeftComma + @"}[\.\,]?[0-9]{" + nbrRightComma + @"}";
+                int zeroCount = inputAr[1].Count(x => x == matchCharZero); // will be 29
+
+                if (zeroCount > 0)
+                    pattern = @"[-+]?[" + MinLimitUnity + @"-9]{" + nbrLeftComma + @"}[\.\,]?[0]{" + zeroCount + @"}?[0-9]{1}";
+                else
+                    pattern = @"[-+]?[" + MinLimitUnity + @"-9]{" + nbrLeftComma + @"}[\.\,]?[0-9]{" + nbrRightComma + @"}";
             }
             else if (IsExponent) // Exponent
             {
                 if (input.Length > 2)
                 {
+                    char matchCharZero = '0';
+
                     inputAr = input.Split(sepearatorExponent);
                     int nbrLeftComma = inputAr[0].Length;
                     int nbrRightComma = inputAr[1].Length;
-                    pattern = @"[-+]?[0-9]*\.?[0-9]{" + nbrRightComma + @"}([eE]?[0-9]{" + nbrRightComma + @"})"; 
+
+                    pattern = @"[-+]?[0-9]*\.?[0-9]{" + nbrRightComma + @"}([eE]?[0-9]{" + nbrRightComma + @"})";
                 }
             }
             else // INTEGER
-            {  
+            {
                 int value;
                 if (int.TryParse(input, out value))
                 {
@@ -183,7 +193,8 @@ namespace WindowsFormsApp3
                         pattern = @"[-+]?[0-9]{" + nbrLeftComma + "}";
 
                 }
-                else { // IS_STRING
+                else
+                { // IS_STRING
                     errorProvider1.SetError(tbExtRegex, "Doesn't contain numbers");
 
                 }
